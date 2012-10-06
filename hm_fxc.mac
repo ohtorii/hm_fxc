@@ -21,7 +21,6 @@
 /////////////////////////////////////////////////////////////////////////////
 
 //一時ディレクトリ
-//$_g_tmp_dir = hidemarudir + "/mcpp/macro_temp/";
 //テンポラリファイル名（ベース名）
 //環境変数TMPのディレクトリに生成する。（可能な限り削除される）
 $g_tmpfile_base_name 	= "tmp_hidemaru_fxc_macro";
@@ -30,9 +29,9 @@ $g_tmpfile_base_name 	= "tmp_hidemaru_fxc_macro";
 $_g_exe_mcpp= "\"" + "C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Utilities\\bin\\x64\\fxc.exe" + "\"";
 
 //fxc.exe のオプション
-$_g_opt_base= "/T fx_4_1 ";
-//$_g_opt_inc = "-I../include -I../inc ";
-$_g_opt_ex	= "";
+$_g_opt_base= "/T fx_4_1 /nologo ";
+//$_g_opt_base= "/T fx_4_1 /nologo /I c:\\my_project\\shader\\include ";
+
 
 
 
@@ -46,11 +45,18 @@ $_g_opt_ex	= "";
 //	メイン処理
 /////////////////////////////////////////////////////////////////////////////
 $_g_abs_tmp_filename = "";
-
-
-call Main;
+call PreMain;
 endmacro;
 
+PreMain:
+	disablehistory 0xff;
+	$_g_old_searchbuffer = searchbuffer;
+	#_g_searchoption 	 = searchoption;
+	setcompatiblemode 0x0003|0x000c|0x0200|0x2000;
+	call Main;
+	setsearch $_g_old_searchbuffer, #_g_searchoption;
+	return ;
+	
 Main:
 	##old_x=x;
 	##old_y=y;
@@ -64,7 +70,7 @@ Main:
 	return ##return ;
 
 Start:
-	$$opt				= $_g_opt_base + $_g_opt_ex;
+	$$opt				= $_g_opt_base + " ";
 	##use_tmp_file		= true;
 	$$tmp_in_filename	= "";
 	
@@ -109,15 +115,14 @@ MakeFile:
 	}else{
 		selectall;
 	}
-
-	//選択範囲をクリップボードへコピー
-	copy2;
+	$$text = gettext2(seltopcolumn,seltoplineno,selendcolumn,selendlineno);
 
 	//新しい秀丸へ貼り付け
 	##cur_hidemaru = hidemaruhandle(0);
-	newfile;
+	//newfile;
+	openfile "/h";
 	##dst_hidemaru = hidemaruhandle(0);
-	poppaste;
+	insert($$text);
 
 	//新しい秀丸をファイルへ保存
 	saveas $$tmp_filename;
@@ -135,15 +140,15 @@ SpawnMcpp:
 	//$$tmp_out_filename	= "\"" + $$2 + "\"";
 
 	//新しい秀丸へ貼り付け
-	##cur_hidemaru = hidemaruhandle(0);
+	/*##cur_hidemaru = hidemaruhandle(0);
 	newfile;
-	##dst_hidemaru = hidemaruhandle(0);
+	##dst_hidemaru = hidemaruhandle(0);*/
 
 	disabledraw;
 	$cmd = $_g_exe_mcpp + " " + $$opt + " " + $$tmp_in_filename;
 	runex $cmd, 1,
 		0, "",
-		1, "",
+		7, "",
 		1, "",
 		0, "",
 		2, 1, 0;
